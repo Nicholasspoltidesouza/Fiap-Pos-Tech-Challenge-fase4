@@ -1,0 +1,9 @@
+.env
+*.log
+.idea/
+.vscode/
+target/
+**/target/
+demo-runner/target/
+.DS_Store
+*.class

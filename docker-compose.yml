@@ -1,0 +1,163 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: fase4-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-os:
+    image: postgres:16-alpine
+    container_name: fase4-postgres-os
+    environment:
+      POSTGRES_DB: os_service_db
+      POSTGRES_USER: os_user
+      POSTGRES_PASSWORD: os_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - os_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U os_user -d os_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-execution:
+    image: postgres:16-alpine
+    container_name: fase4-postgres-execution
+    environment:
+      POSTGRES_DB: execution_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5434:5432"
+    volumes:
+      - execution_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d execution_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb-billing:
+    image: mongo:7
+    container_name: fase4-mongodb-billing
+    ports:
+      - "27017:27017"
+    volumes:
+      - billing_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  os-service:
+    build:
+      context: ../Fiap-Pos-Tech-Challenge-os-service
+    container_name: fase4-os-service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      POSTGRES_HOST: postgres-os
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: os_service_db
+      POSTGRES_USER: os_user
+      POSTGRES_PASSWORD: os_password
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      SECURITY_PERMIT_ALL: "true"
+    depends_on:
+      postgres-os:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  billing-service:
+    build:
+      context: ../Fiap-Pos-Tech-Challenge-billing-service
+    container_name: fase4-billing-service
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      MONGODB_URI: mongodb://mongodb-billing:27017/billing_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      MERCADO_PAGO_MOCK_ENABLED: "true"
+      MERCADO_PAGO_AUTO_APPROVE: "true"
+    depends_on:
+      mongodb-billing:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  execution-service:
+    build:
+      context: ../Fiap-Pos-Tech-Challenge-execution-service
+    container_name: fase4-execution-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      POSTGRES_HOST: postgres-execution
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: execution_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+    depends_on:
+      postgres-execution:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: fase4-jaeger
+    ports:
+      - "16686:16686"
+      - "9411:9411"
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: fase4-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: fase4-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+
+volumes:
+  os_pg_data:
+  execution_pg_data:
+  billing_mongo_data:

@@ -1,0 +1,183 @@
+{
+  "info": {
+    "name": "FIAP Fase 4 — Todos os Fluxos",
+    "description": "Exemplos de execução end-to-end: happy path, rejeição/compensação e consultas por serviço/banco.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "osUrl", "value": "http://localhost:8081" },
+    { "key": "billingUrl", "value": "http://localhost:8082" },
+    { "key": "executionUrl", "value": "http://localhost:8083" },
+    { "key": "osId", "value": "" },
+    { "key": "execId", "value": "" },
+    { "key": "orcamentoId", "value": "" },
+    { "key": "clienteId", "value": "11111111-1111-1111-1111-111111111111" },
+    { "key": "veiculoId", "value": "22222222-2222-2222-2222-222222222222" }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "OS health",
+          "request": { "method": "GET", "url": "{{osUrl}}/actuator/health" }
+        },
+        {
+          "name": "Billing health",
+          "request": { "method": "GET", "url": "{{billingUrl}}/actuator/health" }
+        },
+        {
+          "name": "Execution health",
+          "request": { "method": "GET", "url": "{{executionUrl}}/actuator/health" }
+        }
+      ]
+    },
+    {
+      "name": "1. Happy Path",
+      "item": [
+        {
+          "name": "1.1 Criar OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('osId', json.id);",
+                  "pm.test('OS criada', () => pm.response.code === 201);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"{{clienteId}}\",\n  \"veiculoId\": \"{{veiculoId}}\",\n  \"descricaoProblema\": \"Barulho no motor ao acelerar\",\n  \"valorEstimado\": 350.00\n}"
+            },
+            "url": "{{osUrl}}/api/ordens-servico"
+          }
+        },
+        {
+          "name": "1.2 Consultar OS",
+          "request": { "method": "GET", "url": "{{osUrl}}/api/ordens-servico/{{osId}}" }
+        },
+        {
+          "name": "1.3 Orçamentos no Mongo (por OS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const arr = pm.response.json();",
+                  "if (Array.isArray(arr) && arr.length) { pm.collectionVariables.set('orcamentoId', arr[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{billingUrl}}/api/orcamentos/por-ordem/{{osId}}" }
+        },
+        {
+          "name": "1.4 Aprovar orçamento",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"aprovado\": true }" },
+            "url": "{{osUrl}}/api/ordens-servico/{{osId}}/aprovar-orcamento"
+          }
+        },
+        {
+          "name": "1.5 Buscar execução",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('execId', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{executionUrl}}/api/execucoes/por-ordem/{{osId}}" }
+        },
+        {
+          "name": "1.6 Iniciar diagnóstico",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"notas\": \"Correia dentada danificada\" }" },
+            "url": "{{executionUrl}}/api/execucoes/{{execId}}/iniciar-diagnostico"
+          }
+        },
+        {
+          "name": "1.7 Iniciar reparo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"notas\": \"Substituicao da correia\" }" },
+            "url": "{{executionUrl}}/api/execucoes/{{execId}}/iniciar-reparo"
+          }
+        },
+        {
+          "name": "1.8 Finalizar execução",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"notas\": \"Servico concluido\" }" },
+            "url": "{{executionUrl}}/api/execucoes/{{execId}}/finalizar"
+          }
+        },
+        {
+          "name": "1.9 Entregar OS",
+          "request": { "method": "POST", "url": "{{osUrl}}/api/ordens-servico/{{osId}}/entregar" }
+        },
+        {
+          "name": "1.10 Histórico OS (PostgreSQL)",
+          "request": { "method": "GET", "url": "{{osUrl}}/api/ordens-servico/{{osId}}/historico" }
+        }
+      ]
+    },
+    {
+      "name": "2. Compensação (rejeitar orçamento)",
+      "item": [
+        {
+          "name": "2.1 Criar OS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('osId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"55555555-5555-5555-5555-555555555555\",\n  \"veiculoId\": \"66666666-6666-6666-6666-666666666666\",\n  \"descricaoProblema\": \"Sera rejeitado\",\n  \"valorEstimado\": 200.00\n}"
+            },
+            "url": "{{osUrl}}/api/ordens-servico"
+          }
+        },
+        {
+          "name": "2.2 Rejeitar orçamento",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"aprovado\": false }" },
+            "url": "{{osUrl}}/api/ordens-servico/{{osId}}/aprovar-orcamento"
+          }
+        },
+        {
+          "name": "2.3 Conferir orçamentos compensados",
+          "request": { "method": "GET", "url": "{{billingUrl}}/api/orcamentos/por-ordem/{{osId}}" }
+        }
+      ]
+    }
+  ]
+}
