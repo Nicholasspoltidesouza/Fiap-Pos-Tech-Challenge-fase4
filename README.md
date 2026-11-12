@@ -4,9 +4,10 @@ Hub de orquestração local da Fase 4. Os microsserviços vivem em **repositóri
 
 | Serviço | Repositório | Porta | Banco |
 |---------|-------------|-------|-------|
-| **OS Service** (orquestrador Saga) | `Fiap-Pos-Tech-Challenge-os-service` | 8081 | PostgreSQL (SQL) |
-| **Billing Service** (orçamento + Mercado Pago) | `Fiap-Pos-Tech-Challenge-billing-service` | 8082 | MongoDB (NoSQL) |
-| **Execution Service** (fila de produção) | `Fiap-Pos-Tech-Challenge-execution-service` | 8083 | PostgreSQL (SQL) |
+| **OS Service** (orquestrador Saga) | [Fiap-Pos-Tech-Challenge-os-service](https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-os-service) | 8081 | PostgreSQL (SQL) |
+| **Billing Service** (orçamento + Mercado Pago) | [Fiap-Pos-Tech-Challenge-billing-service](https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-billing-service) | 8082 | MongoDB (NoSQL) |
+| **Execution Service** (fila de produção) | [Fiap-Pos-Tech-Challenge-execution-service](https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-execution-service) | 8083 | PostgreSQL (SQL) |
+| **Hub Fase 4** | [Fiap-Pos-Tech-Challenge-fase4](https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-fase4) | — | Compose + demo |
 
 Mensageria compartilhada: **RabbitMQ** (exchange topic `oficina.events`).
 

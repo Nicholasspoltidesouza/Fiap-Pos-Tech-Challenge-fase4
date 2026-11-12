@@ -180,37 +180,42 @@ public final class DemoRunner {
             System.out.println("[db] skipped (--skip-db)");
             return;
         }
+        String safeOsId = requireUuid(osId);
         section("DATABASE SNAPSHOT — " + label);
 
         runDocker(
                 "PostgreSQL OS (ordem_servico)",
                 "docker", "exec", "fase4-postgres-os",
-                "psql", "-U", "os_user", "-d", "os_service_db", "-c",
-                "SELECT id, status, valor_orcamento FROM ordem_servico WHERE id = '" + osId + "';");
+                "psql", "-U", "os_user", "-d", "os_service_db", "-v", "osid=" + safeOsId, "-c",
+                "SELECT id, status, valor_orcamento FROM ordem_servico WHERE id = :'osid';");
 
         runDocker(
                 "PostgreSQL OS (saga_instance)",
                 "docker", "exec", "fase4-postgres-os",
-                "psql", "-U", "os_user", "-d", "os_service_db", "-c",
-                "SELECT ordem_servico_id, current_step, status FROM saga_instance WHERE ordem_servico_id = '" + osId + "';");
+                "psql", "-U", "os_user", "-d", "os_service_db", "-v", "osid=" + safeOsId, "-c",
+                "SELECT ordem_servico_id, current_step, status FROM saga_instance WHERE ordem_servico_id = :'osid';");
 
         runDocker(
                 "MongoDB Billing (orcamentos)",
                 "docker", "exec", "fase4-mongodb-billing",
                 "mongosh", "--quiet", "billing_db", "--eval",
-                "db.orcamentos.find({ordemServicoId:'" + osId + "'}).toArray()");
+                "db.orcamentos.find({ordemServicoId: '" + safeOsId + "'}).toArray()");
 
         runDocker(
                 "MongoDB Billing (pagamentos)",
                 "docker", "exec", "fase4-mongodb-billing",
                 "mongosh", "--quiet", "billing_db", "--eval",
-                "db.pagamentos.find({ordemServicoId:'" + osId + "'}).toArray()");
+                "db.pagamentos.find({ordemServicoId: '" + safeOsId + "'}).toArray()");
 
         runDocker(
                 "PostgreSQL Execution (execucao_trabalho)",
                 "docker", "exec", "fase4-postgres-execution",
-                "psql", "-U", "admin", "-d", "execution_db", "-c",
-                "SELECT id, status, ordem_servico_id FROM execucao_trabalho WHERE ordem_servico_id = '" + osId + "';");
+                "psql", "-U", "admin", "-d", "execution_db", "-v", "osid=" + safeOsId, "-c",
+                "SELECT id, status, ordem_servico_id FROM execucao_trabalho WHERE ordem_servico_id = :'osid';");
+    }
+
+    private static String requireUuid(String value) {
+        return UUID.fromString(value).toString();
     }
 
     private void runDocker(String title, String... command) {
@@ -283,14 +288,15 @@ public final class DemoRunner {
     }
 
     private JsonNode getJson(String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        URI uri = allowedUri(url);
+        HttpRequest request = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(20))
                 .GET()
                 .header("Accept", "application/json")
                 .build();
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("GET " + url + " -> " + response.statusCode() + " " + response.body());
+            throw new IllegalStateException("GET " + uri + " -> " + response.statusCode() + " " + response.body());
         }
         if (response.body() == null || response.body().isBlank()) {
             return mapper.nullNode();
@@ -299,10 +305,11 @@ public final class DemoRunner {
     }
 
     private JsonNode postJson(String url, String jsonBody) throws Exception {
+        URI uri = allowedUri(url);
         HttpRequest.BodyPublisher publisher = (jsonBody == null || jsonBody.isBlank())
                 ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(jsonBody);
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(30))
                 .POST(publisher)
                 .header("Accept", "application/json");
@@ -311,12 +318,24 @@ public final class DemoRunner {
         }
         HttpResponse<String> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("POST " + url + " -> " + response.statusCode() + " " + response.body());
+            throw new IllegalStateException("POST " + uri + " -> " + response.statusCode() + " " + response.body());
         }
         if (response.body() == null || response.body().isBlank()) {
             return mapper.nullNode();
         }
         return mapper.readTree(response.body());
+    }
+
+    private static URI allowedUri(String url) {
+        URI uri = URI.create(url);
+        String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
+        boolean allowedHost = host.equals("localhost")
+                || host.equals("127.0.0.1")
+                || host.endsWith(".local");
+        if (!allowedHost || uri.getScheme() == null || !uri.getScheme().equalsIgnoreCase("http")) {
+            throw new IllegalArgumentException("Refusing non-local HTTP URL: " + url);
+        }
+        return uri;
     }
 
     private static String text(JsonNode node, String field) {
