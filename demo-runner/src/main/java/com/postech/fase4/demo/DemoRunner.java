@@ -183,17 +183,19 @@ public final class DemoRunner {
         String safeOsId = requireUuid(osId);
         section("DATABASE SNAPSHOT — " + label);
 
+        // safeOsId is validated UUID — safe for literal SQL in demo snapshots
         runDocker(
                 "PostgreSQL OS (ordem_servico)",
                 "docker", "exec", "fase4-postgres-os",
-                "psql", "-U", "os_user", "-d", "os_service_db", "-v", "osid=" + safeOsId, "-c",
-                "SELECT id, status, valor_orcamento FROM ordem_servico WHERE id = :'osid';");
+                "psql", "-U", "os_user", "-d", "os_service_db", "-c",
+                "SELECT id, status, valor_orcamento FROM ordem_servico WHERE id = '" + safeOsId + "';");
 
         runDocker(
                 "PostgreSQL OS (saga_instance)",
                 "docker", "exec", "fase4-postgres-os",
-                "psql", "-U", "os_user", "-d", "os_service_db", "-v", "osid=" + safeOsId, "-c",
-                "SELECT ordem_servico_id, current_step, status FROM saga_instance WHERE ordem_servico_id = :'osid';");
+                "psql", "-U", "os_user", "-d", "os_service_db", "-c",
+                "SELECT ordem_servico_id, current_step, status FROM saga_instance WHERE ordem_servico_id = '"
+                        + safeOsId + "';");
 
         runDocker(
                 "MongoDB Billing (orcamentos)",
@@ -210,8 +212,9 @@ public final class DemoRunner {
         runDocker(
                 "PostgreSQL Execution (execucao_trabalho)",
                 "docker", "exec", "fase4-postgres-execution",
-                "psql", "-U", "admin", "-d", "execution_db", "-v", "osid=" + safeOsId, "-c",
-                "SELECT id, status, ordem_servico_id FROM execucao_trabalho WHERE ordem_servico_id = :'osid';");
+                "psql", "-U", "admin", "-d", "execution_db", "-c",
+                "SELECT id, status, ordem_servico_id FROM execucao_trabalho WHERE ordem_servico_id = '"
+                        + safeOsId + "';");
     }
 
     private static String requireUuid(String value) {

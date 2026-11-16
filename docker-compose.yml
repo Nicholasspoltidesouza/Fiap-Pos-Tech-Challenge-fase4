@@ -94,6 +94,7 @@ services:
     environment:
       SERVER_PORT: 8082
       MONGODB_URI: mongodb://mongodb-billing:27017/billing_db
+      SPRING_MONGODB_URI: mongodb://mongodb-billing:27017/billing_db
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
