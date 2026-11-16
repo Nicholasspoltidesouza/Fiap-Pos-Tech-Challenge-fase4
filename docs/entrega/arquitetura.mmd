@@ -1,0 +1,34 @@
+flowchart LR
+  Client["Cliente / Postman / Swagger"]
+
+  subgraph MS["Microsservicos"]
+    OS["OS Service :8081<br/>Saga Orchestrator<br/>Java 25 / Spring Boot 4"]
+    BILL["Billing Service :8082<br/>Orcamento + Mercado Pago<br/>Java 25 / Spring Boot 4"]
+    EXEC["Execution Service :8083<br/>Fila de producao<br/>Java 25 / Spring Boot 4"]
+  end
+
+  RMQ[("RabbitMQ<br/>exchange topic<br/>oficina.events")]
+
+  PGOS[("PostgreSQL<br/>os_service_db<br/>SQL")]
+  MONGO[("MongoDB<br/>billing_db<br/>NoSQL")]
+  PGEX[("PostgreSQL<br/>execution_db<br/>SQL")]
+  MP["Mercado Pago<br/>mock / API"]
+
+  OBS["Observabilidade<br/>Prometheus + Grafana + Jaeger"]
+
+  Client -->|"REST"| OS
+  Client -->|"REST"| BILL
+  Client -->|"REST"| EXEC
+
+  OS <-->|"eventos/comandos"| RMQ
+  BILL <-->|"eventos/comandos"| RMQ
+  EXEC <-->|"eventos/comandos"| RMQ
+
+  OS --> PGOS
+  BILL --> MONGO
+  BILL --> MP
+  EXEC --> PGEX
+
+  OS -.-> OBS
+  BILL -.-> OBS
+  EXEC -.-> OBS

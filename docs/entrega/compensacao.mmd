@@ -1,0 +1,13 @@
+sequenceDiagram
+  actor Cliente
+  participant OS as OS Service
+  participant RMQ as RabbitMQ
+  participant Billing as Billing Service
+
+  Cliente->>OS: POST aprovar-orcamento aprovado=false
+  OS->>OS: Marca FALHA_COMPENSADA / saga COMPENSATING
+  OS->>RMQ: compensar.orcamento
+  OS->>RMQ: compensar.pagamento
+  RMQ->>Billing: cancela orcamento/pagamento
+  Billing->>Billing: status CANCELADO no MongoDB
+  OS->>OS: saga COMPENSATED

@@ -1,0 +1,30 @@
+sequenceDiagram
+  actor Cliente
+  participant OS as OS Service
+  participant RMQ as RabbitMQ
+  participant Billing as Billing Service
+  participant MP as Mercado Pago
+  participant Exec as Execution Service
+
+  Cliente->>OS: POST /api/ordens-servico
+  OS->>OS: Persiste OS + saga_instance
+  OS->>RMQ: orcamento.gerar
+  RMQ->>Billing: consome comando
+  Billing->>Billing: Grava orcamento MongoDB
+  Billing->>RMQ: orcamento.gerado
+  RMQ->>OS: atualiza AGUARDANDO_APROVACAO
+
+  Cliente->>OS: POST aprovar-orcamento aprovado=true
+  OS->>RMQ: pagamento.solicitar
+  RMQ->>Billing: consome comando
+  Billing->>MP: cria preferencia / mock auto-approve
+  Billing->>RMQ: pagamento.aprovado
+  RMQ->>OS: EM_EXECUCAO
+  OS->>RMQ: execucao.iniciar
+  RMQ->>Exec: enfileira job
+  Exec->>RMQ: execucao.iniciada
+
+  Cliente->>Exec: diagnostico / reparo / finalizar
+  Exec->>RMQ: execucao.finalizada
+  RMQ->>OS: FINALIZADA + saga COMPLETED
+  Cliente->>OS: POST entregar

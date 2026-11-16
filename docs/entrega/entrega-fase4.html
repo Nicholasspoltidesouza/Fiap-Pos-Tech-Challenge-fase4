@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Tech Challenge - Fase 4 - Grupo 50</title>
+<style>
+  @page { size: A4 portrait; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2933;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 250mm;
+    text-align: center;
+    border-top: 10px solid #0f766e;
+    border-bottom: 10px solid #0f766e;
+    padding: 24px;
+  }
+  .cover .eyebrow {
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #0f766e;
+    font-weight: 700;
+    font-size: 11pt;
+    margin-bottom: 8px;
+  }
+  .cover h1 { font-size: 28pt; margin: 6px 0 4px; color: #134e4a; }
+  .cover h2 { font-size: 15pt; font-weight: 500; color: #4a5568; margin: 0 0 28px; }
+  .cover .meta { font-size: 12.5pt; color: #2d3748; margin: 4px 0; }
+  .cover .meta strong { color: #0f766e; }
+  h3.section {
+    color: #0f766e;
+    border-bottom: 2px solid #ccfbf1;
+    padding-bottom: 6px;
+    margin-top: 26px;
+    font-size: 14pt;
+    page-break-after: avoid;
+  }
+  .card {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-left: 5px solid #0f766e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .card .label {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 9pt;
+    color: #0d9488;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .card a { color: #115e59; word-break: break-all; font-weight: 600; }
+  .card .hint { font-size: 10pt; color: #718096; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }
+  th, td { border: 1px solid #99f6e4; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #ccfbf1; color: #134e4a; }
+  tr:nth-child(even) td { background: #f8fffd; }
+  .page-break { page-break-before: always; }
+  .diagram { text-align: center; margin: 12px 0 18px; page-break-inside: avoid; }
+  .diagram img { max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 4px; }
+  .caption { font-size: 9.5pt; color: #718096; margin-top: 6px; }
+  ul { margin: 6px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+  .small { font-size: 10pt; color: #4a5568; }
+</style>
+</head>
+<body>
+
+  <section class="cover">
+    <div class="eyebrow">FIAP Pós Tech · Software Architecture</div>
+    <h1>Tech Challenge — Fase 4</h1>
+    <h2>Microsserviços, Saga Pattern e CI/CD distribuído<br/>Oficina Mecânica em escala nacional</h2>
+    <div class="meta"><strong>Grupo 50</strong></div>
+    <div class="meta">Nicholas Spolti de Souza</div>
+    <div class="meta" style="margin-top:22px; font-size:11pt; color:#718096;">
+      Entrega no portal: repositórios GitHub, diagramas, estratégia Saga,<br/>
+      justificativa técnica e vídeo de demonstração
+    </div>
+  </section>
+
+  <div class="page-break"></div>
+
+  <h3 class="section">1. Identificação dos participantes</h3>
+  <table>
+    <thead>
+      <tr><th>Nome</th><th>Identificação / papel</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Nicholas Spolti de Souza</td>
+        <td>Grupo 50 — aluno FIAP Pós Tech (SOAT)<br/>GitHub: Nicholasspoltidesouza</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="small">Caso o grupo tenha mais integrantes, incluir nomes e RMs nesta tabela antes do envio final ao portal.</p>
+
+  <h3 class="section">2. Links dos repositórios</h3>
+  <p>Cada microsserviço possui repositório, banco, Dockerfile, manifests Kubernetes e pipeline CI/CD próprios, conforme o enunciado.</p>
+  <table>
+    <thead>
+      <tr><th>Componente</th><th>Repositório</th><th>Banco / porta</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>OS Service<br/>(orquestrador Saga)</td>
+        <td><a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-os-service">github.com/.../Fiap-Pos-Tech-Challenge-os-service</a></td>
+        <td>PostgreSQL · :8081</td>
+      </tr>
+      <tr>
+        <td>Billing Service<br/>(orçamento + pagamento)</td>
+        <td><a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-billing-service">github.com/.../Fiap-Pos-Tech-Challenge-billing-service</a></td>
+        <td>MongoDB · :8082</td>
+      </tr>
+      <tr>
+        <td>Execution Service<br/>(fila de produção)</td>
+        <td><a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-execution-service">github.com/.../Fiap-Pos-Tech-Challenge-execution-service</a></td>
+        <td>PostgreSQL · :8083</td>
+      </tr>
+      <tr>
+        <td>Hub Fase 4<br/>(Compose, demo, docs)</td>
+        <td><a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-fase4">github.com/.../Fiap-Pos-Tech-Challenge-fase4</a></td>
+        <td>RabbitMQ + observabilidade</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="card">
+    <div class="label">Repositórios da Fase 3 (ainda válidos como base)</div>
+    <a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-1">oficina-api (monólito Fase 1–3)</a><br/>
+    <a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-auth-lambda">auth-lambda</a> ·
+    <a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-infra-k8s">infra-k8s</a> ·
+    <a href="https://github.com/Nicholasspoltidesouza/Fiap-Pos-Tech-Challenge-infra-db">infra-db</a>
+  </div>
+
+  <h3 class="section">3. Link do vídeo (até 15 minutos)</h3>
+  <div class="card">
+    <div class="label">Vídeo de demonstração</div>
+    <strong>PENDENTE DE UPLOAD</strong> — substituir pelo link YouTube/Vimeo após a gravação.<br/>
+    <span class="hint">Roteiro pronto em <code>Fiap-Pos-Tech-Challenge-fase4/docs/ROTEIRO_VIDEO_FASE4.md</code>.
+    Deve mostrar: fluxo completo da OS, Saga com falha/compensação, deploy/CI de pelo menos um serviço e monitoramento.</span>
+  </div>
+
+  <div class="page-break"></div>
+
+  <h3 class="section">4. Diagrama geral da arquitetura</h3>
+  <p>Arquitetura distribuída com três microsserviços independentes, mensageria assíncrona (RabbitMQ), REST síncrono quando necessário, e bancos isolados (SQL + NoSQL).</p>
+  <div class="diagram">
+    <img src="arquitetura.png" alt="Diagrama de arquitetura Fase 4" />
+    <div class="caption">Figura 1 — Microsserviços, bancos de dados e comunicação via RabbitMQ</div>
+  </div>
+
+  <h3 class="section">5. Estratégia do Saga Pattern (orquestração)</h3>
+  <div class="card">
+    <div class="label">Escolha</div>
+    <strong>Saga Orquestrado</strong>, com o <strong>OS Service</strong> como orquestrador central.
+  </div>
+  <p><strong>Justificativa:</strong></p>
+  <ul>
+    <li>O fluxo da OS é linear e crítico: criar → orçar → aprovar → pagar → executar → finalizar.</li>
+    <li>Compensações precisam de decisão centralizada (evita “pingue-pongue” entre serviços).</li>
+    <li>Auditoria explícita via tabela <code>saga_instance</code> (passo atual e status: RUNNING, COMPENSATING, COMPENSATED, COMPLETED).</li>
+    <li>Em operação com múltiplas filiais, o orquestrador reduz ambiguidade operacional.</li>
+  </ul>
+  <p>Comunicação: comandos/eventos no exchange topic <code>oficina.events</code>. Nenhum serviço acessa o banco de outro.</p>
+
+  <div class="diagram">
+    <img src="saga.png" alt="Diagrama de sequência do Saga feliz" />
+    <div class="caption">Figura 2 — Sequência do Saga (caminho feliz)</div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="diagram">
+    <img src="compensacao.png" alt="Diagrama de compensação do Saga" />
+    <div class="caption">Figura 3 — Compensação (rejeição de orçamento / falha de pagamento)</div>
+  </div>
+
+  <h3 class="section">6. Justificativa da divisão e tecnologias</h3>
+  <table>
+    <thead>
+      <tr><th>Microsserviço</th><th>Por que separar</th><th>Tecnologias</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>OS Service</strong></td>
+        <td>Dono do agregado Ordem de Serviço e do ciclo de vida; ponto natural para orquestrar o Saga e manter histórico/status.</td>
+        <td>Java 25, Spring Boot 4, JPA, PostgreSQL, RabbitMQ, Swagger, JaCoCo, Cucumber, K8s, GitHub Actions</td>
+      </tr>
+      <tr>
+        <td><strong>Billing Service</strong></td>
+        <td>Domínio financeiro distinto (orçamento/pagamento), integração Mercado Pago e documentos variáveis — ideal para MongoDB (requisito NoSQL).</td>
+        <td>Java 25, Spring Boot 4, MongoDB, Mercado Pago (mock/API), RabbitMQ, Swagger, testes + BDD, K8s, CI/CD</td>
+      </tr>
+      <tr>
+        <td><strong>Execution Service</strong></td>
+        <td>Chão de fábrica com fila e estados próprios (diagnóstico/reparo), escalável independentemente do atendimento/billing.</td>
+        <td>Java 25, Spring Boot 4, JPA, PostgreSQL, RabbitMQ, Swagger, testes + BDD, K8s, CI/CD</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>SQL + NoSQL:</strong> PostgreSQL no OS e no Execution; MongoDB no Billing — atende o requisito obrigatório.</p>
+  <p><strong>REST + mensageria:</strong> REST para APIs de cada serviço; RabbitMQ para desacoplar etapas do Saga.</p>
+  <p><strong>Qualidade:</strong> testes unitários, BDD (Cucumber), cobertura JaCoCo ≥ 80%, Sonar no CI, deploy Kubernetes.</p>
+
+  <h3 class="section">7. Como validar (evidências de funcionamento)</h3>
+  <div class="card">
+    <div class="label">Stack local + demo executável</div>
+    No hub <code>Fiap-Pos-Tech-Challenge-fase4</code>:<br/>
+    <code>docker compose up --build</code><br/>
+    <code>.\run-demo.ps1</code> — executa fluxo feliz + compensação e inspeciona as três bases.<br/>
+    Swagger: :8081 / :8082 / :8083 · RabbitMQ UI :15672 · Grafana :3000 · Prometheus :9090 · Jaeger :16686
+  </div>
+  <p class="small">Testes automatizados validados com <code>mvn verify</code> em cada microsserviço. Integração E2E validada na stack Docker (OS ↔ Billing ↔ Execution via RabbitMQ).</p>
+
+  <h3 class="section">8. Observabilidade (continuidade Fase 3)</h3>
+  <ul>
+    <li>Actuator + métricas Prometheus em cada serviço</li>
+    <li>Grafana e Prometheus no hub Fase 4</li>
+    <li>Jaeger disponível para rastreamento distribuído</li>
+  </ul>
+
+  <div class="card" style="margin-top:28px;">
+    <div class="label">Checklist de entrega no portal</div>
+    ✓ Nomes/identificação dos participantes<br/>
+    ✓ Links dos repositórios<br/>
+    ○ Link do vídeo (preencher após upload)<br/>
+    ✓ Diagrama da arquitetura final<br/>
+    ✓ Estratégia Saga (orquestração) justificada<br/>
+    ✓ Justificativa da divisão e tecnologias
+  </div>
+
+</body>
+</html>
