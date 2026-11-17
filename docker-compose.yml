@@ -79,11 +79,15 @@ services:
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
       SECURITY_PERMIT_ALL: "true"
+      ZIPKIN_ENDPOINT: http://jaeger:9411/api/v2/spans
+      TRACING_SAMPLING_PROBABILITY: "1.0"
     depends_on:
       postgres-os:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      jaeger:
+        condition: service_started
 
   billing-service:
     build:
@@ -101,11 +105,15 @@ services:
       RABBITMQ_PASSWORD: guest
       MERCADO_PAGO_MOCK_ENABLED: "true"
       MERCADO_PAGO_AUTO_APPROVE: "true"
+      ZIPKIN_ENDPOINT: http://jaeger:9411/api/v2/spans
+      TRACING_SAMPLING_PROBABILITY: "1.0"
     depends_on:
       mongodb-billing:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      jaeger:
+        condition: service_started
 
   execution-service:
     build:
@@ -124,11 +132,15 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
+      ZIPKIN_ENDPOINT: http://jaeger:9411/api/v2/spans
+      TRACING_SAMPLING_PROBABILITY: "1.0"
     depends_on:
       postgres-execution:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      jaeger:
+        condition: service_started
 
   jaeger:
     image: jaegertracing/all-in-one:1.57
